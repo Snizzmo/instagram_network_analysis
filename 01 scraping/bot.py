@@ -10,16 +10,19 @@ import re
 import collections
 import sys
 
+
 class Bot:
     def setUp(self):
         """Start web driver"""
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_argument('--no-sandbox')
-        #chrome_options.add_argument('--headless')
+        # chrome_options.add_argument('--headless')
         chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument("--lang=en")
-        self.times_restarted = 0  # keep track of how many times profile page has to be refreshed
-        self.driver = webdriver.Chrome(chrome_options=chrome_options)
+        # keep track of how many times profile page has to be refreshed
+        self.times_restarted = 0
+        self.driver = webdriver.Chrome(
+            chrome_options=chrome_options, executable_path="C:\\Windows.old\\Users\\cfran\\AppData\\Roaming\\Python\\Python38\\WebDriver\\chromedriver.exe")
         self.driver.implicitly_wait(20)
 
     def tear_down(self):
@@ -34,12 +37,16 @@ class Bot:
             self.fail(ex.msg)
 
     def login(self, username, password):
-        self.driver.find_element_by_xpath("//input[@name='username']").send_keys(username)
-        self.driver.find_element_by_xpath("//input[@name='password']").send_keys(password)
+        self.driver.find_element_by_xpath(
+            "//input[@name='username']").send_keys(username)
+        self.driver.find_element_by_xpath(
+            "//input[@name='password']").send_keys(password)
         time.sleep(2)
-        self.driver.find_element_by_xpath("//button[contains(.,'Log In')]").click()
+        self.driver.find_element_by_xpath(
+            "//button[contains(.,'Log In')]").click()
         time.sleep(3)
-        self.driver.find_element_by_xpath("//button[contains(.,'Not Now')]").click()
+        self.driver.find_element_by_xpath(
+            "//button[contains(.,'Not Now')]").click()
         notNow = self.driver.find_element_by_class_name("HoLwm")
         time.sleep(3)
         notNow.click()
@@ -63,7 +70,7 @@ class Bot:
             self.driver.execute_script(jquery)
             # scroll down the page
             self.driver.execute_script(initialise_vars)
-            #self.driver.execute_script(scroll_followers)
+            # self.driver.execute_script(scroll_followers)
             self.driver.execute_script(initial_scroll)
             time.sleep(3)
 
@@ -74,7 +81,8 @@ class Bot:
                 time.sleep(1.5)
                 n_li_2 = len(self.driver.find_elements_by_class_name("FPmhX"))
                 if(n_li_1 != n_li_2):
-                    following = self.driver.find_elements_by_xpath("//*[contains(text(), 'Following')]")
+                    following = self.driver.find_elements_by_xpath(
+                        "//*[contains(text(), 'Following')]")
                     for follow in following:
                         el = follow.find_element_by_xpath('../..')
                         el = el.find_element_by_tag_name('a')
@@ -89,14 +97,15 @@ class Bot:
         n_my_followers = len(my_followers_arr)
         count_my_followers = start_profile - 1
 
-        for current_profile in my_followers_arr[start_profile - 1 : -1] + [my_followers_arr[-1]]:
+        for current_profile in my_followers_arr[start_profile - 1: -1] + [my_followers_arr[-1]]:
             print("Start scraping " + current_profile)
             self.go_to_page(current_profile)
             time.sleep(random.randint(5, 20))
-            last_5_following = collections.deque([1, 2, 3, 4, 5])  # queue to keep track of Instagram blocking scroll requests
+            # queue to keep track of Instagram blocking scroll requests
+            last_5_following = collections.deque([1, 2, 3, 4, 5])
             count_my_followers += 1
 
-            with open('start_profile.txt', 'w+') as outfile: # keep track of last profile checked
+            with open('start_profile.txt', 'w+') as outfile:  # keep track of last profile checked
                 outfile.write(str(count_my_followers))
 
             followers = self.driver.find_elements_by_class_name("-nal3")
@@ -120,29 +129,35 @@ class Bot:
                 next = True
                 follow_set = set()
                 # check how many people this person follows
-                nr_following = int(re.sub(",","",self.driver.find_elements_by_class_name("g47SY")[2].text))
+                nr_following = int(
+                    re.sub(",", "", self.driver.find_elements_by_class_name("g47SY")[2].text))
 
                 n_li = 1
                 while next:
-                    print(str(count_my_followers) + "/" + str(n_my_followers) + " " + str(n_li) + "/" + str(nr_following))
+                    print(str(count_my_followers) + "/" + str(n_my_followers) +
+                          " " + str(n_li) + "/" + str(nr_following))
                     time.sleep(random.randint(7, 12) / 10.0)
                     self.driver.execute_script(next_scroll)
                     time.sleep(random.randint(7, 12) / 10.0)
                     if not (n_li < nr_following - 11):
                         next = False
 
-                    n_li = len(self.driver.find_elements_by_class_name("FPmhX"))
+                    n_li = len(
+                        self.driver.find_elements_by_class_name("FPmhX"))
                     last_5_following.appendleft(n_li)
                     last_5_following.pop()
                     # if instagram starts blocking requests, reload page and start again
                     if len(set(last_5_following)) == 1:
-                        print("Instagram seems to keep on loading. Refreshing page in 7 seconds")
+                        print(
+                            "Instagram seems to keep on loading. Refreshing page in 7 seconds")
                         self.times_restarted += 1
                         if self.times_restarted == 4:
-                            print("Instagram keeps on blocking your request. Terminating program. Start it again later.")
+                            print(
+                                "Instagram keeps on blocking your request. Terminating program. Start it again later.")
                             sys.exit()
                         time.sleep(7)
-                        self.get_followers(my_followers_arr, count_my_followers, relations_file)
+                        self.get_followers(
+                            my_followers_arr, count_my_followers, relations_file)
 
                 self.times_restarted = 0
 
@@ -156,7 +171,7 @@ class Bot:
                     for relation in follow_set:
                         outfile.write(relation[0] + " " + relation[1] + "\n")
 
-                print("This person follows " + str(len(follow_set)) + " of your connections. \n")
+                print("This person follows " + str(len(follow_set)) +
+                      " of your connections. \n")
 
         sys.exit()
-
